@@ -276,7 +276,7 @@ export default function Feedback() {
       {/* Header */}
       <div className="bg-[#1E1E1E] text-white flex items-center justify-between p-5 h-[75px] lg:h-[85px]">
         <h2 className="text-lg lg:text-xl font-semibold">
-          {isEditing ? "Modifica feedback" : "Lascia un feedback"}
+          {isEditing ? "Edit feedback" : "Leave feedback"}
         </h2>
         <motion.button 
           onClick={() => navigate(-1)} 
@@ -310,7 +310,7 @@ export default function Feedback() {
             {/* Question 1 */}
             <motion.div variants={formItemVariants} className="mb-10 lg:mb-12">
               <p className="text-[18px] md:text-[20px] lg:text-[24px] font-bold mb-5 lg:mb-6">
-                Il cliente è soddisfatto del risultato del test?
+                Is the customer satisfied with the test result?
               </p>
               <div className="flex items-center space-x-4">
                 <motion.label 
@@ -321,12 +321,12 @@ export default function Feedback() {
                   <input
                     type="radio"
                     name="satisfied"
-                    value="Si"
-                    checked={feedback.satisfied === "Si"}
+                    value="Yes"
+                    checked={feedback.satisfied === "Yes" || feedback.satisfied === "Si"}
                     onChange={handleChange}
                     className="focus:outline-none focus:ring-1 focus:ring-[#1E1E1E]"
                   />
-                  <span>Si</span>
+                  <span>Yes</span>
                 </motion.label>
                 <motion.label 
                   className="flex items-center space-x-1 relative"
@@ -349,7 +349,7 @@ export default function Feedback() {
             {/* Question 2 */}
             <motion.div variants={formItemVariants} className="mb-10 lg:mb-12">
               <p className="text-[18px] md:text-[20px] lg:text-[24px] font-bold mb-5 lg:mb-6">
-                Il cliente ha acquistato prodotti per i look consigliati?
+                Did the customer purchase products for the recommended looks?
               </p>
               <div className="flex items-center space-x-4">
                 <motion.label 
@@ -360,12 +360,12 @@ export default function Feedback() {
                   <input
                     type="radio"
                     name="purchased"
-                    value="Si"
-                    checked={feedback.purchased === "Si"}
+                    value="Yes"
+                    checked={feedback.purchased === "Yes" || feedback.purchased === "Si"}
                     onChange={handleChange}
                     className="focus:outline-none focus:ring-1 focus:ring-[#1E1E1E]"
                   />
-                  <span>Si</span>
+                  <span>Yes</span>
                 </motion.label>
                 <motion.label 
                   className="flex items-center space-x-1"
@@ -388,12 +388,12 @@ export default function Feedback() {
             {/* Notes */}
             <motion.div variants={formItemVariants} className="mb-20 lg:mb-24">
               <p className="text-lg lg:text-xl font-bold mb-5 lg:mb-6">
-                Note
+                Notes
               </p>
               <motion.textarea
                 name="notes"
                 className="w-full border-2 border-[#1E1E1E] rounded-[2px] p-4 lg:p-6 text-base lg:text-lg h-[250px] lg:h-[300px] focus:outline-none focus:ring-0 focus:border-[#1E1E1E]"
-                placeholder="Aggiungi qui commenti o note sulla consulenza che possono aiutare a migliorare NARS Persona"
+                placeholder="Add comments or notes about the consultation that can help improve NARS Persona"
                 value={feedback.notes}
                 onChange={handleChange}
                 rows={6}
@@ -421,7 +421,7 @@ export default function Feedback() {
                     transition: { delay: 0.3, duration: 0.4 }
                   }}
                 >
-                  {loading ? 'Invio in corso...' : isEditing ? 'Aggiorna' : 'Invia'}
+                  {loading ? 'Submitting...' : isEditing ? 'Update' : 'Submit'}
                 </motion.button>
               </div>
             </div>

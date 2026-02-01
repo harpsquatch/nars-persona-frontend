@@ -559,7 +559,7 @@ export default function ConsultantInfo() {
                             </>
                           ) : (
                             <>
-                              <span className="underline font-bold">scopri di più</span>
+                              <span className="underline font-bold">learn more</span>
                               <svg 
                                 xmlns="http://www.w3.org/2000/svg" 
                                 className="h-4 w-4 ml-1" 
@@ -722,7 +722,7 @@ export default function ConsultantInfo() {
                           className="text-3xl font-bold mb-4 md:mb-0 mx-auto md:mx-0 md:whitespace-nowrap lg:text-4xl"
                           variants={contentVariants}
                         >
-                          {hasFeedback ? "Grazie per il tuo feedback!": "Com'è andata?"}
+                          {hasFeedback ? "Thank you for your feedback!": "How did it go?"}
                         </motion.h4>
                       </div>
                       <div>
@@ -731,10 +731,10 @@ export default function ConsultantInfo() {
                           variants={contentVariants}
                         >
                           {hasFeedback 
-                            ? "Puoi sempre aggiungere dettagli o modificarlo"
+                            ? "You can always add details or edit it"
                             : (
                               <>
-                                Aiutaci a capire come migliorare <i>NARS Persona</i>
+                                Help us understand how to improve <i>NARS Persona</i>
                               </>
                             )
                           }
@@ -754,7 +754,7 @@ export default function ConsultantInfo() {
                       whileTap={{ scale: 0.97 }}
                       variants={contentVariants}
                     >
-                      {hasFeedback ? "Modifica feedback" : "Lascia un feedback"}
+                      {hasFeedback ? "Edit feedback" : "Leave feedback"}
                     </motion.button>
                   </div>
                 )}

@@ -806,7 +806,7 @@ export default function LookDetails() {
                     className="text-[30px] md:text-2xl lg:text-3xl font-bold"
                     variants={itemVariants}
                   >
-                    Prodotti must have
+                    Must-have products
                   </motion.h2>
                   <motion.div 
                     className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4"

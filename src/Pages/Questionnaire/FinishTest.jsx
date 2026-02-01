@@ -244,7 +244,7 @@ export default function FinishTest() {
                     className="text-center text-[30px] font-bold d:text-3xlm lg:text-4xl mb-10 md:mb-5"
                     variants={itemVariants}
                   >
-                    Finito
+                    Complete
                   </motion.h2>
                   
                   {/* Description */}
@@ -253,10 +253,10 @@ export default function FinishTest() {
                     variants={itemVariants}
                   >
                     <p className="text-[#8F8F8F] text-[16px]">
-                      Il tuo profilo è pronto
+                      Your profile is ready
                     </p>
                     <p className="text-[#8F8F8F] text-[16px] mb-3">
-                      Scopriamo insieme come valorizzare la tua unicità!
+                      Let's discover together how to enhance your uniqueness!
                     </p>
                   </motion.div>
 
@@ -282,7 +282,7 @@ export default function FinishTest() {
                         whileHover="hover"
                         whileTap="tap"
                       >
-                        Scopri i look per te
+                        Discover your looks
                       </motion.button>
                     </div>
                   </div>

@@ -23,12 +23,12 @@ export default function ConsultantDataPage({ consultations = [] }) {
   return (
     <div>
       <header className="flex justify-between items-center mb-13 md:mb-7 gap-3 py-3">
-        <h1 className="text-[24px] font-bold">Consulenze</h1>
+        <h1 className="text-[24px] font-bold">Consultations</h1>
         <button 
           onClick={handleNewConsultation}
           className="bg-[#1E1E1E] text-white py-1.5 px-2 rounded-[2px] text-sm md:px-4 md:py-1 font-bold min-h-[34px] flex items-center max-w-[120px] md:max-w-none"
         >
-          Nuova consulenza
+          New consultation
         </button>
       </header>
       <div className="space-y-4">

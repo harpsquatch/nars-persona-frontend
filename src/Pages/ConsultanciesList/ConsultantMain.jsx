@@ -118,15 +118,15 @@ const ConsultantMain = () => {
     
     // Check if date is today, yesterday, or earlier
     if (date.toDateString() === now.toDateString()) {
-      return `Oggi · ${timeStr}`;
+      return `Today · ${timeStr}`;
     } else if (date.toDateString() === yesterday.toDateString()) {
-      return `Ieri · ${timeStr}`;
+      return `Yesterday · ${timeStr}`;
     } else {
-      // Format as DD/MM/YYYY for older dates
+      // Format as MM/DD/YYYY for older dates
       const day = date.getDate().toString().padStart(2, '0');
       const month = (date.getMonth() + 1).toString().padStart(2, '0');
       const year = date.getFullYear();
-      return `${day}/${month}/${year} · ${timeStr}`;
+      return `${month}/${day}/${year} · ${timeStr}`;
     }
   };
 

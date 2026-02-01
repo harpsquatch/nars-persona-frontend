@@ -168,13 +168,13 @@ export default function StartTestPage() {
           variants={itemVariants}
         >
           <p className="text-[#8F8F8F] text-[16px] lg:text-[18px] mb-5 lg:mb-6 mx-[8px]">
-            Non ci sono risposte giuste o sbagliate: prenditi il tempo che ti serve e rispondi onestamente a ciascuna domanda.
+            There are no right or wrong answers: take the time you need and answer each question honestly.
           </p>
           <p className="text-[#8F8F8F] text-[16px] lg:text-[18px] mb-5 lg:mb-6 mx-[8px]">
-            Alla fine del percorso, scoprirai un profilo creato apposta per te, con consigli pratici e look progettati per valorizzare la tua unicità.
+            At the end, you'll discover a profile created just for you, with practical tips and looks designed to enhance your uniqueness.
           </p>
           <p className="text-[#8F8F8F] text-[16px] lg:text-[18px]">
-            Se è tutto chiaro, cominciamo!
+            If everything is clear, let's begin!
           </p>
         </motion.div>
         
@@ -187,7 +187,7 @@ export default function StartTestPage() {
             whileHover="hover"
             whileTap="tap"
           >
-            Inizia
+            Start
           </motion.button>
         </div>
       </div>
