@@ -4,10 +4,6 @@ const API_BASE_URL = import.meta.env.VITE_API_URL
 // Determine whether to use mock API (default to false if not set)
 const USE_MOCK_API = import.meta.env.VITE_USE_MOCK_API === 'true';
 
-// Debug: Log the API URL
-console.log('API_BASE_URL:', API_BASE_URL);
-console.log('VITE_API_URL env:', import.meta.env.VITE_API_URL);
-
 if (!API_BASE_URL) {
   throw new Error('VITE_API_URL is not defined in environment variables');
 }
