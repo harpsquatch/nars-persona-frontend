@@ -8,8 +8,8 @@ export default function StartTestPage() {
   const navigate = useNavigate();
 
   const handleStartTest = () => {
-    // Navigate to the questionnaire page
-    navigate('/QuestionnairePage');
+    // Navigate to the chatbot questionnaire page
+    navigate('/ChatbotQuestionnaire');
   };
 
   // Animation variants
@@ -118,7 +118,7 @@ export default function StartTestPage() {
     >
       {/* Header */}
       <div className="flex items-center p-[14px] gap-3">
-        <Link to="/ConsultantMain">
+        <Link to="/ConsultantInfo">
           <motion.button 
             className="p-2"
             whileHover={{ scale: 1.1 }}
@@ -158,7 +158,7 @@ export default function StartTestPage() {
           <img
             src={lookImage}
             alt="Look Finder"
-            className="w-[158px] h-[260px] object-contain md:w-[245px] md:h-[363px] lg:w-[280px] lg:h-[420px] md:mb-14 lg:mb-16"
+            className="w-[758px] h-[260px] object-contain md:w-[1158px] md:h-[363px] lg:w-[1158px] lg:h-[420px] md:mb-14 lg:mb-16"
           />
         </motion.div>
 

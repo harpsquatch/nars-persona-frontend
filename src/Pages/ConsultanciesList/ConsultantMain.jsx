@@ -1,16 +1,19 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import ConsultantDataPage from "./ConsultantDataPage";
 import ConsultantNone from "./ConsultantNone";
 import Navbar from "../../Components/Navbar";
 import { consultationService, API_BASE_URL } from "../../services/api";
 import axios from "axios";
 import { motion, AnimatePresence } from "framer-motion";
-import { Loader2 } from "lucide-react";
+import { Loader2, Briefcase, Heart, PartyPopper, Calendar, Sparkles, Zap } from "lucide-react";
 
 const ConsultantMain = () => {
+  const navigate = useNavigate();
   const [consultations, setConsultations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
+  const [generatingContext, setGeneratingContext] = useState(null);
 
   useEffect(() => {
     // Fetch consultations for the current user
@@ -130,6 +133,57 @@ const ConsultantMain = () => {
     }
   };
 
+  // Quick Context buttons configuration
+  const quickContexts = [
+    { label: "Office", icon: Briefcase, context: "office" },
+    { label: "Date", icon: Heart, context: "date" },
+    { label: "Party", icon: PartyPopper, context: "party" },
+    { label: "Everyday", icon: Calendar, context: "everyday" },
+    { label: "Wedding", icon: Sparkles, context: "wedding" },
+    { label: "Custom", icon: Zap, context: "custom" }
+  ];
+
+  // Handle quick context generation
+  const handleQuickContext = async (context) => {
+    setGeneratingContext(context);
+    
+    try {
+      // Get user's latest consultation to base the recommendation on
+      const token = localStorage.getItem('token');
+      const userId = localStorage.getItem('user_id');
+      
+      if (!userId) {
+        navigate("/");
+        return;
+      }
+
+      const consultationsResponse = await axios.get(
+        `${API_BASE_URL}/consultations?user_id=${userId}&latest=true`,
+        { headers: { 'Authorization': `Bearer ${token}` } }
+      );
+
+      const latestConsultation = consultationsResponse.data.length > 0 ? consultationsResponse.data[0] : null;
+
+      if (!latestConsultation || !latestConsultation.result) {
+        // No consultation found, redirect to quiz
+        navigate("/StartTestPage");
+        return;
+      }
+
+      // Navigate to the archetype page with the context parameter
+      navigate("/ConsultantInfo", { 
+        state: { 
+          context: context,
+          consultation: latestConsultation
+        } 
+      });
+    } catch (error) {
+      console.error("Error generating context recommendation:", error);
+    } finally {
+      setGeneratingContext(null);
+    }
+  };
+
   // Animation variants for page transitions
   const pageVariants = {
     initial: { opacity: 0, y: 20 },
@@ -177,6 +231,47 @@ const ConsultantMain = () => {
       <Navbar />
       <div className="min-h-screen bg-white px-6 py-6 flex flex-col items-center">
         <div className="w-full max-w-4xl">
+          {/* Quick Context Row */}
+          <motion.div 
+            className="mb-8"
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+          >
+            <h2 className="text-xl md:text-2xl font-bold mb-4">Get a look for</h2>
+            <div className="flex flex-wrap gap-3">
+              {quickContexts.map((ctx) => {
+                const Icon = ctx.icon;
+                const isGenerating = generatingContext === ctx.context;
+                
+                return (
+                  <motion.button
+                    key={ctx.context}
+                    onClick={() => handleQuickContext(ctx.context)}
+                    disabled={isGenerating || loading}
+                    className={`
+                      flex items-center gap-2 px-4 py-3 rounded-full 
+                      bg-[#F5F5F5] hover:bg-[#1E1E1E] hover:text-white
+                      text-[#1E1E1E] font-semibold text-sm md:text-base
+                      transition-all duration-300 
+                      ${isGenerating ? 'opacity-50 cursor-wait' : 'cursor-pointer'}
+                      ${loading ? 'opacity-50 cursor-not-allowed' : ''}
+                    `}
+                    whileHover={{ scale: loading ? 1 : 1.05 }}
+                    whileTap={{ scale: loading ? 1 : 0.95 }}
+                  >
+                    {isGenerating ? (
+                      <Loader2 size={18} className="animate-spin" />
+                    ) : (
+                      <Icon size={18} />
+                    )}
+                    <span>{ctx.label}</span>
+                  </motion.button>
+                );
+              })}
+            </div>
+          </motion.div>
+
           <AnimatePresence mode="wait">
             {loading ? (
               <motion.div 

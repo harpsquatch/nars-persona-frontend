@@ -8,35 +8,80 @@ import { motion, AnimatePresence } from "framer-motion";
 import Navbar from "../../Components/Navbar"; // Import Navbar component
 import { Grid } from "../../Components/Grid"; // Add this import
 import loadingSpinner from '../../assets/spinner-black.png';
+import axios from "axios";
+import { API_BASE_URL } from "../../services/api";
+import { H2, H3, Body2 } from "../../Components/atoms/Typography";
+import SubmitButton from "../../Components/atoms/SubmitButton";
 
 export default function FinishTest() {
   const navigate = useNavigate();
   const location = useLocation();
   const answers = location.state?.answers || [];
   const consultationData = location.state?.consultationData;
+  const aesthetics = location.state?.aesthetics;
+  const lifestyle = location.state?.lifestyle;
+  
   const [loading, setLoading] = useState(false);
+  const [showSignup, setShowSignup] = useState(true);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [error, setError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // No useEffect needed - we'll use the data directly
-
-  const handleSubmit = () => {
-    setLoading(true);
+  const handleSignup = async (e) => {
+    e.preventDefault();
+    setError("");
     
-    // Get consultation ID directly from props or localStorage
-    const consultationId = consultationData?.consultation_id || 
-                          consultationData?.id ||
-                          localStorage.getItem('consultation_id');
+    if (!email || !password) {
+      setError("Please fill in all fields");
+      return;
+    }
     
-    console.log("FinishTest: Navigating with consultation ID:", consultationId);
+    if (password !== confirmPassword) {
+      setError("Passwords do not match");
+      return;
+    }
     
-    setTimeout(() => {
-      // Navigate directly to ConsultantInfo with the consultation ID
-      navigate("/ConsultantInfo", { 
-        state: { 
-          id: consultationId,
-          result: consultationData?.result
-        } 
+    if (password.length < 6) {
+      setError("Password must be at least 6 characters");
+      return;
+    }
+    
+    setIsSubmitting(true);
+    
+    try {
+      // Try to signup
+      const response = await axios.post(`${API_BASE_URL}/signup`, {
+        email: email,
+        password: password,
+        answers: answers,
+        aesthetics: aesthetics,
+        lifestyle: lifestyle
       });
-    }, 3000);
+      
+      // Store token and user info
+      localStorage.setItem('token', response.data.token);
+      localStorage.setItem('userId', response.data.user.id);
+      
+      // Show loading and navigate
+      setShowSignup(false);
+      setLoading(true);
+      
+      setTimeout(() => {
+        navigate("/ConsultantInfo");
+      }, 2000);
+      
+    } catch (error) {
+      setIsSubmitting(false);
+      
+      if (error.response?.status === 409 || error.response?.data?.message?.includes("already exists")) {
+        setError("You already have a NARS Persona Account. Please login instead.");
+      } else {
+        setError(error.response?.data?.message || "Error creating account. Please try again.");
+      }
+      console.error('Signup error:', error);
+    }
   };
 
   // Animation variants
@@ -226,7 +271,7 @@ export default function FinishTest() {
             <div className="flex items-center p-[14px] gap-3">
               <motion.button 
                 className="p-2" 
-                onClick={() => navigate("/QuestionnairePage")}
+                onClick={() => navigate("/")}
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.9 }}
               >
@@ -235,57 +280,138 @@ export default function FinishTest() {
             </div>
 
             {/* Center the grid container */}
-            <div className="flex justify-center items-center w-full flex-grow -mt-30">
+            <div className="flex justify-center items-start w-full flex-grow overflow-y-auto py-8">
               <Grid>
                 {/* Main content - spans 4 columns */}
-                <div className="col-span-4 md:col-start-2 md:col-span-4 flex flex-col items-center justify-center p-0">
+                <div className="col-span-4 md:col-start-2 md:col-span-4 flex flex-col items-center p-0">
                   {/* Title */}
-                  <motion.h2 
-                    className="text-center text-[30px] font-bold d:text-3xlm lg:text-4xl mb-10 md:mb-5"
-                    variants={itemVariants}
-                  >
-                    Complete
-                  </motion.h2>
-                  
-                  {/* Description */}
-                  <motion.div 
-                    className="w-full text-center mb-1 md:mb-7"
-                    variants={itemVariants}
-                  >
-                    <p className="text-[#8F8F8F] text-[16px]">
-                      Your profile is ready
-                    </p>
-                    <p className="text-[#8F8F8F] text-[16px] mb-3">
-                      Let's discover together how to enhance your uniqueness!
-                    </p>
-                  </motion.div>
+                  {showSignup && (
+                    <>
+                      <motion.div variants={itemVariants}>
+                        <H2 className="text-center mb-4">CREATE YOUR ACCOUNT</H2>
+                      </motion.div>
+                      
+                      {/* Description */}
+                      <motion.div 
+                        className="w-full text-center mb-6"
+                        variants={itemVariants}
+                      >
+                        <Body2 className="text-[#8F8F8F]">
+                          Your profile is ready! Create an account to save your results.
+                        </Body2>
+                      </motion.div>
+                    </>
+                  )}
 
                   {/* Image */}
-                  <motion.div 
-                    className="flex justify-center w-full mb-30"
-                    variants={imageVariants}
-                  >
-                    <img
-                      src={lookImage}
-                      alt="Look Finder"
-                      className="w-[170px] h-[300px] object-contain md:w-[350px] md:h-[500px] d:hm-[550px]"
-                    />
-                  </motion.div>
+                  {showSignup && (
+                    <motion.div 
+                      className="flex justify-center w-full mb-6"
+                      variants={imageVariants}
+                    >
+                      <img
+                        src={lookImage}
+                        alt="Look Finder"
+                        className="w-[720px] h-[200px] object-contain md:w-[720px] md:h-[300px]"
+                      />
+                    </motion.div>
+                  )}
                   
-                  {/* Button with adjusted container */}
-                  <div className="fixed bottom-8 md:bottom-25 left-6 right-6 md:left-43 md:right-43 flex justify-center">
-                    <div className="w-full px-0">
-                      <motion.button 
-                        onClick={handleSubmit}
-                        className="w-full bg-[#1E1E1E] text-white py-2.5 hover:bg-[#333333] transition h-[50px] font-bold rounded-[2px] flex items-center justify-center text-sm md:w-[50%] md:mx-auto"
-                        variants={buttonVariants}
-                        whileHover="hover"
-                        whileTap="tap"
-                      >
-                        Discover your looks
-                      </motion.button>
-                    </div>
-                  </div>
+                  {/* Signup Form */}
+                  {showSignup && (
+                    <motion.div 
+                      className="w-full max-w-md px-6"
+                      variants={itemVariants}
+                    >
+                      <form onSubmit={handleSignup} className="space-y-4">
+                        <div>
+                          <input
+                            type="email"
+                            value={email}
+                            onChange={(e) => {
+                              setEmail(e.target.value);
+                              setError("");
+                            }}
+                            className={`w-full h-[50px] py-3 px-4 border ${
+                              error ? 'border-red-500' : 'border-gray-300'
+                            } rounded-none outline-none transition-colors focus:border-[#1E1E1E] bg-white`}
+                            placeholder="Email"
+                            style={{ 
+                              fontSize: '14px',
+                              color: '#1E1E1E'
+                            }}
+                          />
+                        </div>
+                        
+                        <div>
+                          <input
+                            type="password"
+                            value={password}
+                            onChange={(e) => {
+                              setPassword(e.target.value);
+                              setError("");
+                            }}
+                            className={`w-full h-[50px] py-3 px-4 border ${
+                              error ? 'border-red-500' : 'border-gray-300'
+                            } rounded-none outline-none transition-colors focus:border-[#1E1E1E] bg-white`}
+                            placeholder="Password"
+                            style={{ 
+                              fontSize: '14px',
+                              color: '#1E1E1E'
+                            }}
+                          />
+                        </div>
+                        
+                        <div>
+                          <input
+                            type="password"
+                            value={confirmPassword}
+                            onChange={(e) => {
+                              setConfirmPassword(e.target.value);
+                              setError("");
+                            }}
+                            className={`w-full h-[50px] py-3 px-4 border ${
+                              error ? 'border-red-500' : 'border-gray-300'
+                            } rounded-none outline-none transition-colors focus:border-[#1E1E1E] bg-white`}
+                            placeholder="Confirm Password"
+                            style={{ 
+                              fontSize: '14px',
+                              color: '#1E1E1E'
+                            }}
+                          />
+                        </div>
+                        
+                        {error && (
+                          <motion.div
+                            initial={{ opacity: 0, y: -10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="p-3 bg-red-50 border border-red-200 rounded-[2px]"
+                          >
+                            <Body2 className="text-red-600">{error}</Body2>
+                          </motion.div>
+                        )}
+                        
+                        <SubmitButton
+                          onClick={handleSignup}
+                          disabled={isSubmitting}
+                          loading={isSubmitting}
+                          text={isSubmitting ? 'CREATING ACCOUNT...' : 'CREATE ACCOUNT'}
+                        />
+                        
+                        <div className="text-center mt-4">
+                          <Body2 className="text-[#8F8F8F]">
+                            Already have an account?{' '}
+                            <button
+                              onClick={() => navigate('/login')}
+                              className="text-black underline"
+                            >
+                              Login
+                            </button>
+                          </Body2>
+                        </div>
+                      </form>
+                    </motion.div>
+                  )}
                 </div>
               </Grid>
             </div>

@@ -4,8 +4,11 @@ import axios from "axios";
 import Navbar from "../../Components/Navbar";
 import { Loader2 } from 'lucide-react';
 import Logo from "../../assets/Main.png";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { Grid } from "../../Components/Grid";
+import { collectionService, historyService, wishlistService, API_BASE_URL } from '../../services/api';
+import { Checkbox, H1, H3, Body2 } from "../../Components/atoms";
+import ProductCard from "../../Components/ProductCard";
 
 // 🔹 All data stored here for easy modification
 const lookDetails = {
@@ -81,9 +84,6 @@ const lookDetails = {
   ],
 };
 
-// Add this near the top of your file, after the imports
-const API_BASE_URL = import.meta.env.VITE_API_URL;
-
 // Add this helper function near the top of the file
 const parseMakeupCategories = (categoryString) => {
   if (!categoryString) return [];
@@ -103,6 +103,7 @@ export default function LookDetails() {
   const { lookId } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
+  const [currentLookId, setCurrentLookId] = useState(null);
   const [currentImage, setCurrentImage] = useState(0);
   const [lookTitle, setLookTitle] = useState("Bold Lip");
   const [artistInstruction, setArtistInstruction] = useState("");
@@ -115,6 +116,138 @@ export default function LookDetails() {
   const [touchEnd, setTouchEnd] = useState(0);
   const autoSlideTimerRef = useRef(null);
   const [loading, setLoading] = useState(true);
+  const [ownedProducts, setOwnedProducts] = useState(new Set());
+  const [wishlistItems, setWishlistItems] = useState(new Set());
+  const [loadingWishlist, setLoadingWishlist] = useState(false);
+  const [completedInstructions, setCompletedInstructions] = useState([]);
+  const [savingProgress, setSavingProgress] = useState(false);
+
+  // Load wishlist from backend
+  useEffect(() => {
+    const loadWishlist = async () => {
+      try {
+        const wishlistData = await wishlistService.getWishlist();
+        if (wishlistData?.items) {
+          const wishlistIds = new Set(wishlistData.items.map(item => item.product_id));
+          setWishlistItems(wishlistIds);
+        }
+      } catch (error) {
+        console.error("Error loading wishlist:", error);
+      }
+    };
+    loadWishlist();
+  }, []);
+
+  // Toggle wishlist
+  const toggleWishlist = async (product) => {
+    try {
+      setLoadingWishlist(true);
+      
+      if (wishlistItems.has(product.id)) {
+        // Remove from wishlist
+        await wishlistService.removeFromWishlist(product.id);
+        setWishlistItems(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(product.id);
+          return newSet;
+        });
+      } else {
+        // Add to wishlist
+        await wishlistService.addToWishlist(product.id, 'general');
+        setWishlistItems(prev => new Set([...prev, product.id]));
+      }
+    } catch (error) {
+      console.error("Error toggling wishlist:", error);
+    } finally {
+      setLoadingWishlist(false);
+    }
+  };
+
+  // Toggle product ownership
+  const toggleProductOwnership = async (productId) => {
+    try {
+      if (ownedProducts.has(productId)) {
+        await collectionService.removeFromCollection(productId);
+        setOwnedProducts(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(productId);
+          return newSet;
+        });
+      } else {
+        await collectionService.addToCollection(productId);
+        setOwnedProducts(prev => new Set([...prev, productId]));
+      }
+    } catch (error) {
+      console.error("Error toggling product ownership:", error);
+    }
+  };
+
+  // Load product ownership status
+  const loadOwnershipStatus = async (products) => {
+    try {
+      const productIds = products.map(p => p.id).filter(Boolean);
+      if (productIds.length > 0) {
+        const result = await collectionService.checkOwnership(productIds);
+        setOwnedProducts(new Set(result.owned_product_ids || []));
+      }
+    } catch (error) {
+      console.error("Error loading ownership status:", error);
+    }
+  };
+
+  // Load instruction progress from look history
+  useEffect(() => {
+    const loadInstructionProgress = async () => {
+      const activeId = currentLookId || lookId;
+      if (!activeId) return;
+      
+      try {
+        const history = await historyService.getHistory();
+        const lookHistory = history.find(h => h.look_id === activeId || h.look_id === parseInt(activeId));
+        if (lookHistory && lookHistory.completed_instructions) {
+          setCompletedInstructions(lookHistory.completed_instructions);
+          console.log("Loaded instruction progress:", lookHistory.completed_instructions);
+        }
+      } catch (error) {
+        console.error("Error loading instruction progress:", error);
+      }
+    };
+    loadInstructionProgress();
+  }, [currentLookId, lookId]);
+
+  // Toggle instruction completion
+  const toggleInstructionComplete = async (stepIndex, isChecked) => {
+    const activeId = currentLookId || lookId;
+    if (!activeId) {
+      console.error("No look ID available");
+      return;
+    }
+    
+    console.log("Toggling step", stepIndex, "for look ID", activeId);
+    
+    let newCompleted;
+    if (isChecked) {
+      newCompleted = [...completedInstructions, stepIndex];
+    } else {
+      newCompleted = completedInstructions.filter(i => i !== stepIndex);
+    }
+    
+    setCompletedInstructions(newCompleted);
+    
+    // Save to backend with debounce
+    try {
+      setSavingProgress(true);
+      console.log("Saving progress:", newCompleted);
+      await historyService.updateInstructionProgress(activeId, newCompleted);
+      console.log("Progress saved successfully");
+    } catch (error) {
+      console.error('Error saving instruction progress:', error);
+      // Revert on error
+      setCompletedInstructions(completedInstructions);
+    } finally {
+      setSavingProgress(false);
+    }
+  };
 
   // Simplify the handleDotClick function - just change the image
   const handleDotClick = (index) => {
@@ -179,6 +312,12 @@ export default function LookDetails() {
     if (location.state && location.state.lookData) {
       console.log("Look data from navigation:", location.state.lookData);
       const lookData = location.state.lookData;
+      
+      // Set the current look ID
+      if (lookData.id) {
+        setCurrentLookId(lookData.id);
+        console.log("Setting current look ID:", lookData.id);
+      }
       
       // Update the title from the navigation data
       if (lookData.name) {
@@ -246,18 +385,11 @@ export default function LookDetails() {
             instructions = lookData.instructions;
           }
           
-          // Map the instructions to our steps format - simplified version
+          // The instructions are now a flat array of {step, title, description}
+          // Convert to the format expected by the component
           if (Array.isArray(instructions)) {
-            const formattedSteps = instructions.map((section) => ({
-              label: section.label,
-              instructions: section.instructions.map((instruction, index) => ({
-                step: index + 1,
-                description: instruction,
-              })),
-              // No separate title field
-            }));
-            
-            setLookSteps(formattedSteps);
+            setLookSteps(instructions);
+            console.log("Setting steps from navigation:", instructions);
           }
         } catch (err) {
           console.error("Error parsing instructions:", err);
@@ -266,13 +398,12 @@ export default function LookDetails() {
       
       // Update products if available
       if (lookData.products && Array.isArray(lookData.products)) {
-        const formattedProducts = lookData.products.map(product => ({
-          name: product.name || "Product Name",
-          image: product.image_url || "https://via.placeholder.com/150"
-        }));
+        // Pass the full product object with all fields
+        setLookProducts(lookData.products);
+        console.log("Setting products from navigation:", lookData.products);
         
-        setLookProducts(formattedProducts);
-        console.log("Setting products from navigation:", formattedProducts);
+        // Load ownership status
+        loadOwnershipStatus(lookData.products);
       }
       
       // Set loading to false when data is processed
@@ -365,18 +496,11 @@ export default function LookDetails() {
                 instructions = lookData.instructions;
               }
               
-              // Map the instructions to our steps format - simplified version
+              // The instructions are now a flat array of {step, title, description}
+              // Convert to the format expected by the component
               if (Array.isArray(instructions)) {
-                const formattedSteps = instructions.map((section) => ({
-                  label: section.label,
-                  instructions: section.instructions.map((instruction, index) => ({
-                    step: index + 1,
-                    description: instruction,
-                  })),
-                  // No separate title field
-                }));
-                
-                setLookSteps(formattedSteps);
+                setLookSteps(instructions);
+                console.log("Setting steps from API:", instructions);
               }
             } catch (err) {
               console.error("Error parsing instructions:", err);
@@ -385,13 +509,12 @@ export default function LookDetails() {
           
           // Update products if available
           if (lookData.products && Array.isArray(lookData.products)) {
-            const formattedProducts = lookData.products.map(product => ({
-              name: product.name || "Product Name",
-              image: product.image_url || "https://via.placeholder.com/150"
-            }));
+            // Pass the full product object with all fields
+            setLookProducts(lookData.products);
+            console.log("Setting products from API:", lookData.products);
             
-            setLookProducts(formattedProducts);
-            console.log("Setting products from API:", formattedProducts);
+            // Load ownership status
+            loadOwnershipStatus(lookData.products);
           }
           
           // Set loading to false when data is fetched
@@ -429,98 +552,6 @@ export default function LookDetails() {
     navigate(-1);
   };
 
-  // Animation variants
-  const pageVariants = {
-    initial: { opacity: 0 },
-    animate: { 
-      opacity: 1,
-      transition: { 
-        duration: 0.5,
-        when: "beforeChildren",
-        staggerChildren: 0.1
-      }
-    },
-    exit: { 
-      opacity: 0,
-      transition: { 
-        duration: 0.3
-      }
-    }
-  };
-
-  const imageVariants = {
-    initial: { opacity: 0, scale: 0.95 },
-    animate: { 
-      opacity: 1, 
-      scale: 1,
-      transition: { 
-        duration: 0.6,
-        ease: "easeOut"
-      }
-    }
-  };
-
-  const contentVariants = {
-    initial: { opacity: 0, y: 20 },
-    animate: { 
-      opacity: 1, 
-      y: 0,
-      transition: { 
-        duration: 0.5,
-        ease: "easeOut"
-      }
-    }
-  };
-
-  const staggerVariants = {
-    initial: { opacity: 0 },
-    animate: { 
-      opacity: 1,
-      transition: { 
-        staggerChildren: 0.1
-      }
-    }
-  };
-
-  const itemVariants = {
-    initial: { opacity: 0, y: 15 },
-    animate: { 
-      opacity: 1, 
-      y: 0,
-      transition: { 
-        duration: 0.4,
-        ease: "easeOut"
-      }
-    }
-  };
-
-  const tagVariants = {
-    initial: { opacity: 0, scale: 0.9 },
-    animate: { 
-      opacity: 1, 
-      scale: 1,
-      transition: { 
-        duration: 0.3,
-        ease: "easeOut"
-      }
-    }
-  };
-
-  const loaderVariants = {
-    initial: { opacity: 0 },
-    animate: { 
-      opacity: 1,
-      transition: { 
-        duration: 0.5
-      }
-    },
-    exit: { 
-      opacity: 0,
-      transition: { 
-        duration: 0.3
-      }
-    }
-  };
 
   // Update the artistAdvice array creation with the title
   const artistAdvice = artistInstruction 
@@ -528,58 +559,31 @@ export default function LookDetails() {
     : lookDetails.artistAdvice;
 
   return (
-    <AnimatePresence mode="wait">
+    <>
       {loading ? (
-        <motion.div
-          key="loading"
-          initial="initial"
-          animate="animate"
-          exit="exit"
-          variants={loaderVariants}
-          className="min-h-screen bg-white"
-        >
+        <div className="min-h-screen bg-white">
           <Navbar />
           <div className="min-h-screen bg-white flex flex-col items-center justify-center px-4">
             <div className="w-full max-w-md space-y-8 text-center flex flex-col items-center justify-center">
-              <motion.div 
-                className="flex justify-center items-center"
-                initial={{ opacity: 0, y: -20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2, duration: 0.5 }}
-              >
+              <div className="flex justify-center items-center">
                 <img src={Logo} alt="Logo" />
-              </motion.div>
-              <motion.div 
-                className="mt-8 flex justify-center items-center"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.5, duration: 0.5 }}
-              >
+              </div>
+              <div className="mt-8 flex justify-center items-center">
                 <Loader2 className="w-8 h-8 animate-spin text-[#1E1E1E]" />
-              </motion.div>
+              </div>
             </div>
           </div>
-        </motion.div>
+        </div>
       ) : (
-        <motion.div
-          key="content"
-          initial="initial"
-          animate="animate"
-          exit="exit"
-          variants={pageVariants}
-          className="min-h-screen bg-white"
-        >
+        <div className="min-h-screen bg-white">
           <Navbar />
           <div className="flex justify-center w-full">
             <Grid>
               <div className="col-span-4 md:col-span-6 px-0 md:px-0">
                 {/* 🔹 Back Button with increased top and bottom spacing - updated to match ConsultantInfo.jsx */}
-                <motion.button 
+                <button 
                   onClick={handleBack} 
                   className="text-[15px] my-8 md:my-8 flex items-center"
-                  variants={contentVariants}
-                  whileHover={{ x: -5 }}
-                  whileTap={{ scale: 0.95 }}
                 >
                   <svg 
                     xmlns="http://www.w3.org/2000/svg" 
@@ -596,22 +600,18 @@ export default function LookDetails() {
                     />
                   </svg>
                   Indietro
-                </motion.button>
+                </button>
                 
                 <div className="grid md:grid-cols-6 gap-[26px] mb-[8px]">
                   {/* Image section - ensure it spans 4 columns on mobile */}
                   <div className="col-span-4 md:col-span-3">
-                    <motion.div 
-                      className="w-full flex flex-col items-center md:items-start"
-                      variants={contentVariants}
-                    >
+                    <div className="w-full flex flex-col items-center md:items-start">
                       {/* Image container */}
-                      <motion.div 
+                      <div 
                         className="relative w-full md:max-w-none h-[400px] md:h-[500px] lg:h-[600px] overflow-hidden"
                         onTouchStart={handleTouchStart}
                         onTouchMove={handleTouchMove}
                         onTouchEnd={handleTouchEnd}
-                        variants={imageVariants}
                       >
                         {lookImages.map((image, index) => (
                           <motion.img
@@ -627,49 +627,41 @@ export default function LookDetails() {
                             }}
                           />
                         ))}
-                      </motion.div>
+                      </div>
                       
                       {/* Image dots/carousel indicators - only show if multiple images */}
                       {lookImages.length > 1 && (
-                        <motion.div 
-                          className="relative mt-[10px] flex justify-center items-center gap-[3px] mx-auto z-20 w-full"
-                          variants={contentVariants}
-                        >
+                        <div className="relative mt-[10px] flex justify-center items-center gap-[3px] mx-auto z-20 w-full">
                           {lookImages.map((_, index) => (
-                            <motion.button
+                            <button
                               key={index}
                               className={`w-1 h-1 rounded-full ${
                                 currentImage === index ? "bg-[#8E8E8E]" : "bg-gray-300"
                               }`}
                               onClick={() => handleDotClick(index)}
-                              whileHover={{ scale: 1.2 }}
-                              whileTap={{ scale: 0.9 }}
                             />
                           ))}
-                        </motion.div>
+                        </div>
                       )}
-                    </motion.div>
+                    </div>
                   </div>
 
                   {/* Content section - 3 columns */}
                   <div className="col-span-full md:col-span-3">
-                    <motion.div 
-                      className="flex flex-col justify-end h-full md:h-[500px] lg:h-[600px] w-full gap-[48px] md:gap-[40px]"
-                      variants={contentVariants}
-                    >
+                    <div className="flex flex-col justify-end h-full md:h-[500px] lg:h-[600px] w-full gap-[48px] md:gap-[40px]">
                       {/* Top content group */}
                       <div className="flex flex-col gap-1">
                         {/* Title and Author */}
-                        <motion.div className="flex flex-col" variants={itemVariants}>
-                          <h1 className="text-3xl md:text-3xl lg:text-4xl font-bold mt-4">
+                        <div className="flex flex-col">
+                          <H1 className="mt-4">
                             {lookTitle}
-                          </h1>
+                          </H1>
                           {location.state?.lookData?.author && (
-                            <p className="text-[#8F8F8F] text-[16px] md:text-sm lg:text-base mt-2 md:mt-1 font-bold">
+                            <Body2 className="text-[#000000] mt-2 md:mt-1">
                               {location.state.lookData.author}
-                            </p>
+                            </Body2>
                           )}
-                        </motion.div>
+                        </div>
 
                         {/* Tags */}
                         {/*<motion.div 
@@ -691,153 +683,126 @@ export default function LookDetails() {
 
                       {/* Artist Advice Section */}
                       {artistInstruction && (
-                        <motion.div 
-                          className="hidden md:block"
-                          variants={contentVariants}
-                        >
+                        <div className="hidden md:block">
                           {artistAdvice.map((advice, index) => (
-                            <motion.div
+                            <div
                               key={index}
                               className="bg-[#EFEFEF] p-4 md:p-6 lg:p-8 rounded-[2px]"
-                              initial={{ opacity: 0, y: 20 }}
-                              animate={{ opacity: 1, y: 0 }}
-                              transition={{ delay: 0.3, duration: 0.5 }}
                             >
-                              <h2 className="text-xl md:text-2xl lg:text-3xl font-bold">
-                                {advice.title}
-                              </h2>
-                              <p className={`md:text-base lg:text-lg font-helvetica font-normal leading-[27px] tracking-[0] ${advice.title ? 'mt-2' : ''}`}>
+                              <Body2 className="font-bold">
+                              <strong>{advice.title}</strong>
+                              </Body2>
+                              <Body2 className={advice.title ? 'mt-2' : ''}>
                                 {advice.content}
-                              </p>
-                            </motion.div>
+                              </Body2>
+                            </div>
                           ))}
-                        </motion.div>
+                        </div>
                       )}
-                    </motion.div>
+                    </div>
                   </div>
                 </div>
                 
                 {/* 🔹 Get the Look Section */}
-                <motion.div
-                  variants={contentVariants}
-                  initial="initial"
-                  animate="animate"
-                  transition={{ delay: 0.4 }}
-                  className="mt-12 md:mt-16"
-                >
-                  <motion.div variants={itemVariants}>
-                    <h2 className="md:text-2xl lg:text-3xl font-helvetica font-bold text-[30px] leading-[36px] tracking-[0] mb-[8%] md:mb-[4%] lg:mb-[3%]">
-                      Get the look
-                    </h2>
-                  </motion.div>
+                <div className="mt-12 md:mt-16">
+                  <div>
+                    <H3 className="mb-[8%] md:mb-[4%] lg:mb-[3%]">
+                    GET THE LOOK
+                    </H3>
+                  </div>
 
                   {/* 🔹 Look Steps */}
-                  <motion.div 
-                    className="space-y-6"
-                    variants={staggerVariants}
-                  >
-                    {lookSteps.map((section) => (
-                      <motion.div
-                        key={section.label}
-                        className="space-y-4"
+                  <div className="space-y-6">
+                    {lookSteps.map((item, index) => {
+                      const isCompleted = completedInstructions.includes(index);
+                      
+                      return (
+                        <div
+                          key={index} 
+                          className="flex gap-3 items-center"
                       >
-                        <h3 className="text-[18px] md:text-[18px] font-bold mb-3] uppercase">{section.label}</h3>
-                        {section.instructions.map((item) => (
-                          <motion.div 
-                            key={item.step} 
-                            className="flex"
-                            variants={itemVariants}
-                            whileHover={{ x: 5 }}
+                          {/* Step number box that acts as checkbox */}
+                          <button
+                            onClick={() => toggleInstructionComplete(index, !isCompleted)}
+                            disabled={savingProgress}
+                            className={`flex-shrink-0 inline-flex items-center justify-center w-[27px] h-[27px] rounded-[2px] text-[16px] font-medium transition-all duration-200 ${
+                              isCompleted 
+                                ? 'bg-black text-white' 
+                                : 'bg-white border-1 border-[#GGGGGG] text-black'
+                            } ${savingProgress ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:scale-110'}`}
                           >
-                            <div className="flex-shrink-0">
-                              <span className="inline-flex items-center justify-center w-[27px] h-[27px] text-white bg-black rounded-[2px] text-[16px] font-medium">
-                                -
-                              </span>
-                            </div>
-                            <div className="ml-3">
-                              <p className="text-[18px] md:text-base lg:text-lg font-helvetica font-normal leading-[27px] tracking-[0] -mt-[3px]">
-                                {item.title ? `${item.title}. ${item.description}` : item.description}
-                              </p>
-                            </div>
-                          </motion.div>
-                        ))}
-                      </motion.div>
-                    ))}
-                  </motion.div>
-                </motion.div>
+                            {item.step || index + 1}
+                          </button>
+                          
+                          {/* Step content */}
+                          <div className="flex-1">
+                            <Body2 className={`transition-all duration-200 ${
+                              isCompleted ? 'line-through text-gray-500' : ''
+                            }`}>
+                              {item.title && <strong>{item.title}.</strong>} {item.description}
+                            </Body2>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
 
                 {/* 🔹 Artist Advice Section - moved here for mobile, hidden on tablet/desktop */}
                 {artistInstruction && (
-                  <motion.div 
-                    className="block md:hidden mt-16 w-screen h-auto -mx-[6vw]"
-                    variants={contentVariants}
-                    initial="initial"
-                    animate="animate"
-                    transition={{ delay: 0.5 }}
-                  >
+                  <div className="block md:hidden mt-16 w-screen h-auto -mx-[6vw]">
                     {artistAdvice.map((advice, index) => (
-                      <motion.div
+                      <div
                         key={index}
                         className="bg-[#EFEFEF] px-[5%] py-6 h-auto max-h-[300px] overflow-y-auto"
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.3, duration: 0.5 }}
                       >
-                        <h2 className="text-3xl md:text-2xl font-bold mb-4">
-                          {advice.title}
-                        </h2>
-                        <p className={`md:text-base lg:text-lg font-helvetica font-normal leading-[27px] tracking-[0] ${advice.title ? 'mt-2' : ''}`}>
+                        <Body2 className="mb-4 font-bold">
+                          <strong>{advice.title}</strong>
+                        </Body2>
+                        <Body2 className={advice.title ? 'mt-2' : ''}>
                           {advice.content}
-                        </p>
-                      </motion.div>
+                        </Body2>
+                      </div>
                     ))}
-                  </motion.div>
+                  </div>
                 )}
 
                 {/* Must-have Products with increased bottom spacing */}
-                <motion.div 
-                  className="flex flex-col justify-center mb-10 md:mb-16 mt-16 md:mt-16"
-                  variants={contentVariants}
-                  initial="initial"
-                  animate="animate"
-                  transition={{ delay: 0.6 }}
-                >
-                  <motion.h2 
-                    className="text-[30px] md:text-2xl lg:text-3xl font-bold"
-                    variants={itemVariants}
-                  >
-                    Must-have products
-                  </motion.h2>
-                  <motion.div 
-                    className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4"
-                    variants={staggerVariants}
-                  >
-                    {lookProducts.map((product, index) => (
-                      <motion.div 
-                        key={index} 
-                        className="text-left"
-                        variants={itemVariants}
-                        whileHover={{ y: -5 }}
-                      >
-                        <motion.img
-                          src={product.image}
-                          alt={product.name}
-                          className="w-full h-50 md:h-62 object-contain rounded-lg"
-                          whileHover={{ scale: 1.05 }}
-                          transition={{ duration: 0.2 }}
+                <div className="mb-10 md:mb-16 mt-16 md:mt-16">
+                  <H3 className="mb-2 md:mb-3">
+                    MUST HAVE PRODUCTS
+                  </H3>
+                  
+                  <div className="overflow-visible w-screen -ml-[6vw] md:-ml-[4vw]">
+                    <div className="flex overflow-x-auto hide-scrollbar space-x-3 md:space-x-5 lg:space-x-7 pb-4 pl-[6vw] md:pl-[4vw]">
+                      {lookProducts.map((product, index) => (
+                        <ProductCard
+                          key={product.id || index}
+                          product={product}
+                          isOwned={ownedProducts.has(product.id)}
+                          isInWishlist={wishlistItems.has(product.id)}
+                          index={index}
+                          onWishlistChange={(productId, isInWishlist) => {
+                            if (isInWishlist) {
+                              setWishlistItems(prev => new Set([...prev, productId]));
+                            } else {
+                              setWishlistItems(prev => {
+                                const newSet = new Set(prev);
+                                newSet.delete(productId);
+                                return newSet;
+                              });
+                            }
+                          }}
                         />
-                        <p className="mt-2 md:text-base lg:text-lg font-helvetica font-light text-[16px] leading-[20px] tracking-[0]">
-                          {product.name}
-                        </p>
-                      </motion.div>
-                    ))}
-                  </motion.div>
-                </motion.div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
               </div>
             </Grid>
           </div>
-        </motion.div>
+        </div>
       )}
-    </AnimatePresence>
+    </>
   );
 }

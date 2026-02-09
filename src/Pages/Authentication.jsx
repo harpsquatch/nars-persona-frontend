@@ -1,10 +1,13 @@
 import { useState, useEffect } from "react";
 import { Eye, EyeOff } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import Logo from "../assets/Main.png";
+import LoginImage from "../assets/login.png";
 import { Loader2 } from 'lucide-react'; 
 import { authService } from "../services/api";
 import { motion, AnimatePresence } from "framer-motion";
 import { Grid } from '../Components/Grid';
+import { H2, Body2, H3 } from '../Components/atoms/Typography';
 import eyeShow from '../assets/eye-show.png';
 import eyeHide from '../assets/eye-hide.png';
 import loadingSpinner from '../assets/spinner-black.png';
@@ -13,6 +16,7 @@ import check from '../assets/check.png';
 
 
 function Authentication() {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -119,8 +123,8 @@ function Authentication() {
         localStorage.setItem('rememberedEmail', email);
       }
       
-      // Redirect to main page
-      window.location.href = '/Consultant';
+      // Redirect to archetype page
+      window.location.href = '/ConsultantInfo';
     } catch (error) {
       // If token login fails, clear remembered credentials
       localStorage.removeItem('rememberedEmail');
@@ -162,7 +166,7 @@ function Authentication() {
 
   const handleEmailBlur = () => {
     if (formData.email && !validateEmail(formData.email)) {
-      setEmailError("L'email è errata. Per favore, riprova.");
+      setEmailError("Invalid email. Please try again.");
     } else {
       setEmailError("");
     }
@@ -174,7 +178,7 @@ function Authentication() {
     
     // Check if email is valid before submitting
     if (formData.email && !validateEmail(formData.email)) {
-      setEmailError("L'email è errata. Per favore, riprova.");
+      setEmailError("Invalid email. Please try again.");
       return; // Don't submit if email is invalid
     }
     
@@ -210,7 +214,7 @@ function Authentication() {
       }
       
       setTimeout(() => {
-        window.location.href = '/Consultant';
+        window.location.href = '/ConsultantInfo';
       }, 500);
       
     } catch (error) {
@@ -219,7 +223,7 @@ function Authentication() {
         await new Promise(resolve => setTimeout(resolve, randomDelay - elapsedTime));
       }
       
-      setError("L'email o la password sono errate. Per favore, riprova.");
+      setError(error.message || "Invalid email or password. Please try again.");
       setIsLoading(false);
     }
   };
@@ -297,7 +301,7 @@ function Authentication() {
             >
               <img 
                 src={loadingSpinner} 
-               
+                alt="Loading"
                 className="w-8 h-8 animate-spin"
               />
             </motion.div>
@@ -306,53 +310,74 @@ function Authentication() {
       ) : (
         <motion.div 
           key="login"
-          className="min-h-screen flex items-center justify-center bg-white"
+          className="min-h-screen bg-white"
           initial="initial"
           animate="animate"
           exit="exit"
           variants={pageVariants}
         >
-          <Grid>
-            <div className="col-span-4 md:col-start-2 md:col-span-4 flex flex-col items-center justify-center pt-2 pb-24">
-              <motion.div className="text-center flex items-center justify-center mb-[80px] md:mb-[150px] lg:mb-[210px]">
-                <img src={Logo} alt="Logo" className="w-[224px] h-[139.74px] md:w-[180px] md:h-[120px] lg:w-[240px] lg:h-[140px] object-contain" /> 
-              </motion.div>
-              <motion.form onSubmit={handleSubmit} className="space-y-4 w-full mt-9">
-                <motion.h2 
-                  className="text-[24px] font-semibold"
-                  variants={itemVariants}
-                >
-                  Accedi
-                </motion.h2>
+          {/* Main Container with max-width 1200px */}
+          <div className="w-full mx-auto h-screen flex flex-col md:flex-row">
+            {/* Left Container - Image (50% width) */}
+            <div className="hidden lg:block w-full md:w-1/2 relative overflow-hidden">
+              <img 
+                src={LoginImage} 
+                alt="NARS" 
+                className="w-full h-full object-cover"
+              />
+            </div>
+
+            {/* Right Container - Login Form (50% width) */}
+            <div className="w-full lg:w-1/2 bg-white flex items-center justify-center px-6 md:px-12 lg:px-20 py-12 min-h-screen lg:min-h-0">
+              <div className="w-full max-w-[450px]">
+                {/* NARS PERSONA Logo */}
                 <motion.div 
-                  className="space-y-3 mb-3 w-full"
+                  className="mb-12 flex justify-center"
                   variants={itemVariants}
                 >
+                  <img 
+                    src={Logo} 
+                    alt="NARS PERSONA" 
+                    className="h-20 object-contain" 
+                  />
+                </motion.div>
+
+                {/* Login Form */}
+                <motion.form onSubmit={handleSubmit} className="space-y-6">
+                  <motion.div
+                    variants={itemVariants}
+                    className="mb-8"
+                  >
+                    <H3 className="text-[#1E1E1E]">
+                      LOGIN
+                    </H3>
+                  </motion.div>
+
+                  {/* Email Input */}
                   <motion.div variants={itemVariants}>
-                    <div className="w-full">
-                      <input
-                        type="email"
-                        name="email"
-                        value={formData.email}
-                        onChange={handleChange}
-                        onBlur={handleEmailBlur}
-                        className={`w-full h-[55px] md:h-[45px] lg:h-[60px] py-2 px-3 border rounded-[2px] outline-none transition-colors
-                          ${emailError || error ? 'border-red-500' : 'border-[#1E1E1E]'}
-                        `}
-                        placeholder="Email"
-                        style={{ 
-                          fontSize: '16px', 
-                          color: formData.email ? '#1E1E1E' : '#888888',
-                          fontWeight: formData.email ? '500' : '400'
-                        }}
-                      />
-                    </div>
+                    <input
+                      type="email"
+                      name="email"
+                      value={formData.email}
+                      onChange={handleChange}
+                      onBlur={handleEmailBlur}
+                      className={`w-full h-[50px] py-3 px-4 border ${
+                        emailError || error ? 'border-red-500' : 'border-gray-300'
+                      } rounded-none outline-none transition-colors focus:border-[#1E1E1E] bg-white`}
+                      placeholder="Email"
+                      style={{ 
+                        fontSize: '14px',
+                        color: '#1E1E1E'
+                      }}
+                    />
                     {emailError && (
-                      <p className="text-red-500 text-[16px] mt-1 text-left">
-                        L'<span className="font-bold">email</span> è errata. Per favore, riprova.
-                      </p>
+                      <Body2 className="text-red-500 mt-2">
+                        Invalid email. Please try again.
+                      </Body2>
                     )}
                   </motion.div>
+
+                  {/* Password Input */}
                   <motion.div 
                     className="relative"
                     variants={itemVariants}
@@ -362,73 +387,103 @@ function Authentication() {
                       name="password"
                       value={formData.password}
                       onChange={handleChange}
-                      className={`w-full h-[55px] md:h-[45px] lg:h-[60px] py-2 px-3 border rounded-[2px] outline-none transition-colors
-                        ${error ? 'border-red-500' : 'border-[#1E1E1E]'}
-                      `}
+                      className={`w-full h-[50px] py-3 px-4 border ${
+                        error ? 'border-red-500' : 'border-gray-300'
+                      } rounded-none outline-none transition-colors focus:border-[#1E1E1E] bg-white`}
                       placeholder="Password"
                       style={{ 
-                        fontSize: '16px', 
-                        color: formData.password ? '#1E1E1E' : '#888888',
-                        fontWeight: formData.password ? '500' : '400'
+                        fontSize: '14px',
+                        color: '#1E1E1E'
                       }}
                     />
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 transform -translate-y-1/2"
+                      className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
                     >
                       <img 
                         src={showPassword ? eyeHide : eyeShow} 
                         alt="toggle password visibility"
-                        className="w-[18px] h-[18px] object-contain"
+                        className="w-5 h-5 object-contain"
                       />
                     </button>
                   </motion.div>
-                </motion.div>
-                <motion.div 
-                  className="flex items-center"
-                  variants={itemVariants}
-                >
-                  <input
-                    type="checkbox"
-                    id="remember"
-                    name="remember"
-                    checked={formData.remember}
-                    onChange={handleChange}
-                    style={{ 
-                      backgroundImage: formData.remember ? `url(${check})` : 'none',
-                      backgroundSize: '14px'
-                    }}
-                    className="h-4 w-4 appearance-none border border-[#1E1E1E] rounded-[2px] 
-                      checked:bg-[#1E1E1E] checked:border-[#1E1E1E] 
-                      checked:bg-no-repeat checked:bg-center
-                      accent-[#1E1E1E] focus:outline-none"
-                  />
-                  <label 
-                    htmlFor="remember"
-                    className="ml-2 text-gray-800 font-roboto font-normal text-[15px] leading-[22px] tracking-[0] cursor-pointer "
+
+                  {/* Remember Me Checkbox */}
+                  <motion.div 
+                    className="flex items-center"
+                    variants={itemVariants}
                   >
-                    Ricorda le credenziali al prossimo accesso
-                  </label>
-                </motion.div>
-                <motion.button
-                  type="submit"
-                  className="w-full h-[55px] md:h-[45px] lg:h-[60px]  bg-[#1E1E1E] text-white py-2 rounded-[2px] hover:bg-gray-800 transition-colors mt-1 disabled:opacity-50 disabled:cursor-not-allowed font-semibold"
-                  disabled={isLoading}
-                  variants={itemVariants}
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                >
-                  {isLoading ? 'Loading...' : 'Login'}
-                </motion.button>
-                {error && (
-                  <p className="text-red-500 text-[16px] mt-1 text-left">
-                    L'<span className="font-bold">email</span> o la <span className="font-bold">password</span> sono errate. Per favore, riprova.
-                  </p>
-                )}
-              </motion.form>
+                    <input
+                      type="checkbox"
+                      id="remember"
+                      name="remember"
+                      checked={formData.remember}
+                      onChange={handleChange}
+                      className="h-4 w-4 appearance-none border border-gray-400 rounded-sm 
+                        checked:bg-[#1E1E1E] checked:border-[#1E1E1E] 
+                        focus:outline-none cursor-pointer"
+                      style={{ 
+                        backgroundImage: formData.remember ? `url(${check})` : 'none',
+                        backgroundSize: '12px',
+                        backgroundPosition: 'center',
+                        backgroundRepeat: 'no-repeat'
+                      }}
+                    />
+                    <label 
+                      htmlFor="remember"
+                      className="ml-2 cursor-pointer select-none"
+                    >
+                      <Body2 className="text-gray-600">
+                        Remember credentials for next login
+                      </Body2>
+                    </label>
+                  </motion.div>
+
+                  {/* Error Message */}
+                  {error && (
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                    >
+                      <Body2 className="text-red-500">
+                        Invalid email or password. Please try again.
+                      </Body2>
+                    </motion.div>
+                  )}
+
+                  {/* Login Button */}
+                  <motion.button
+                    type="submit"
+                    className="w-full h-[50px] bg-[#1E1E1E] text-white rounded-none hover:bg-black transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium"
+                    disabled={isLoading}
+                    variants={itemVariants}
+                    whileHover={{ scale: isLoading ? 1 : 1.01 }}
+                    whileTap={{ scale: isLoading ? 1 : 0.99 }}
+                  >
+                    {isLoading ? 'LOADING...' : 'LOGIN'}
+                  </motion.button>
+
+                  {/* New user signup link */}
+                  <motion.div 
+                    className="text-center mt-6"
+                    variants={itemVariants}
+                  >
+                    <Body2 className="text-gray-600">
+                      Don't have an account?{' '}
+                      <button
+                        type="button"
+                        onClick={() => navigate('/StartTestPage')}
+                        className="text-[#1E1E1E] font-light underline hover:text-gray-700 transition-colors"
+                      >
+                        <strong>TALK TO OUR AI CONSULTANT</strong>
+                      </button>
+                    </Body2>
+                  </motion.div>
+                </motion.form>
+              </div>
             </div>
-          </Grid>
+          </div>
         </motion.div>
       )}
     </AnimatePresence>

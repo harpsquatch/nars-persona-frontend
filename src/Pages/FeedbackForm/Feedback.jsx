@@ -4,6 +4,8 @@ import { useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
 import { motion, AnimatePresence } from "framer-motion";
 import { Grid } from "../../Components/Grid";
+import { H2, H3, Body2 } from "../../Components/atoms/Typography";
+import { SubmitButton } from "../../Components/atoms";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL;
 
@@ -274,10 +276,10 @@ export default function Feedback() {
       `}</style>
 
       {/* Header */}
-      <div className="bg-[#1E1E1E] text-white flex items-center justify-between p-5 h-[75px] lg:h-[85px]">
-        <h2 className="text-lg lg:text-xl font-semibold">
-          {isEditing ? "Edit feedback" : "Leave feedback"}
-        </h2>
+      <div className="bg-[#000000] text-white flex items-center justify-between p-5 h-[75px] lg:h-[85px]">
+        <H2 className="text-white">
+        {isEditing ? "EDIT FEEDBACK" : "LEAVE FEEDBACK"}
+        </H2>
         <motion.button 
           onClick={() => navigate(-1)} 
           className="text-white"
@@ -289,10 +291,10 @@ export default function Feedback() {
       </div>
 
       {/* Center the grid container */}
-      <div className="flex justify-center items-center w-full flex-grow">
+      <div className="flex justify-center w-full flex-grow overflow-y-auto">
         <Grid>
           {/* Main content - spans 4 columns and centered */}
-          <div className="col-span-4 md:col-start-2 md:col-span-4 flex flex-col py-8 lg:py-10">
+          <div className="col-span-4 md:col-start-2 md:col-span-4 flex flex-col py-8 lg:py-10 pb-12">
             <AnimatePresence>
               {error && (
                 <motion.div 
@@ -302,16 +304,18 @@ export default function Feedback() {
                   animate="animate"
                   exit="exit"
                 >
-                  {error}
+                  <Body2 className="text-red-700">
+                    {error}
+                  </Body2>
                 </motion.div>
               )}
             </AnimatePresence>
             
             {/* Question 1 */}
             <motion.div variants={formItemVariants} className="mb-10 lg:mb-12">
-              <p className="text-[18px] md:text-[20px] lg:text-[24px] font-bold mb-5 lg:mb-6">
-                Is the customer satisfied with the test result?
-              </p>
+              <Body2 className="mb-5 lg:mb-6">
+                <strong>Are you satisfied with the test result?</strong>
+              </Body2>
               <div className="flex items-center space-x-4">
                 <motion.label 
                   className="flex items-center space-x-1"
@@ -326,7 +330,7 @@ export default function Feedback() {
                     onChange={handleChange}
                     className="focus:outline-none focus:ring-1 focus:ring-[#1E1E1E]"
                   />
-                  <span>Yes</span>
+                  <Body2>Yes</Body2>
                 </motion.label>
                 <motion.label 
                   className="flex items-center space-x-1 relative"
@@ -341,16 +345,16 @@ export default function Feedback() {
                     onChange={handleChange}
                     className="focus:outline-none focus:ring-1 focus:ring-[#1E1E1E]"
                   />
-                  <span>No</span>
+                  <Body2>No</Body2>
                 </motion.label>
               </div>
             </motion.div>
 
             {/* Question 2 */}
             <motion.div variants={formItemVariants} className="mb-10 lg:mb-12">
-              <p className="text-[18px] md:text-[20px] lg:text-[24px] font-bold mb-5 lg:mb-6">
-                Did the customer purchase products for the recommended looks?
-              </p>
+              <Body2 className="mb-5 lg:mb-6">
+                <strong>Did you purchase products for the recommended looks?</strong>
+              </Body2>
               <div className="flex items-center space-x-4">
                 <motion.label 
                   className="flex items-center space-x-1"
@@ -365,7 +369,7 @@ export default function Feedback() {
                     onChange={handleChange}
                     className="focus:outline-none focus:ring-1 focus:ring-[#1E1E1E]"
                   />
-                  <span>Yes</span>
+                  <Body2>Yes</Body2>
                 </motion.label>
                 <motion.label 
                   className="flex items-center space-x-1"
@@ -380,51 +384,41 @@ export default function Feedback() {
                     onChange={handleChange}
                     className="focus:outline-none focus:ring-1 focus:ring-[#1E1E1E]"
                   />
-                  <span>No</span>
+                  <Body2>No</Body2>
                 </motion.label>
               </div>
             </motion.div>
 
             {/* Notes */}
-            <motion.div variants={formItemVariants} className="mb-20 lg:mb-24">
-              <p className="text-lg lg:text-xl font-bold mb-5 lg:mb-6">
-                Notes
-              </p>
+            <motion.div variants={formItemVariants} className="mb-10 lg:mb-12">
+              <H3 className="mb-5 lg:mb-6">
+                NOTES
+              </H3>
               <motion.textarea
                 name="notes"
-                className="w-full border-2 border-[#1E1E1E] rounded-[2px] p-4 lg:p-6 text-base lg:text-lg h-[250px] lg:h-[300px] focus:outline-none focus:ring-0 focus:border-[#1E1E1E]"
+                className="w-full border-2 border-[#1E1E1E] rounded-[2px] p-4 lg:p-6 h-[250px] lg:h-[300px] focus:outline-none focus:ring-0 focus:border-[#1E1E1E] text-base md:text-base lg:text-lg font-light leading-[21.6px]"
                 placeholder="Add comments or notes about the consultation that can help improve NARS Persona"
                 value={feedback.notes}
                 onChange={handleChange}
                 rows={6}
-                style={{ fontSize: '16px', lineHeight: '1.5' }}
                 whileFocus={{ boxShadow: "none" }}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0, transition: { delay: 0.2 } }}
               />
             </motion.div>
 
-            {/* Submit Button - fixed at bottom */}
-            <div className="fixed bottom-8 md:bottom-25 lg:bottom-32 left-0 right-0 flex justify-center">
-              <div className="w-[97%] px-4 md:w-[33.33%] lg:w-[33.33%] md:px-0">
-                <motion.button
-                  className="w-full text-white bg-[#1E1E1E] font-semibold py-2 lg:py-3 text-base lg:text-lg rounded-[2px] disabled:opacity-50"
-                  onClick={handleSubmit}
-                  disabled={!feedback.satisfied || !feedback.purchased || loading}
-                  variants={buttonVariants}
-                  whileHover="hover"
-                  whileTap="tap"
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ 
-                    opacity: !feedback.satisfied || !feedback.purchased ? 0.5 : 1, 
-                    y: 0,
-                    transition: { delay: 0.3, duration: 0.4 }
-                  }}
-                >
-                  {loading ? 'Submitting...' : isEditing ? 'Update' : 'Submit'}
-                </motion.button>
-              </div>
-            </div>
+            {/* Submit Button */}
+            <motion.div 
+              className="mb-8"
+              variants={formItemVariants}
+            >
+              <SubmitButton
+                onClick={handleSubmit}
+                disabled={!feedback.satisfied || !feedback.purchased || loading}
+                loading={loading}
+                isEditing={isEditing}
+              />
+            </motion.div>
           </div>
         </Grid>
       </div>

@@ -3,7 +3,12 @@ export default {
     mode: 'jit', // Force JIT mode
     content: ["./index.html", "./src/**/*.{js,ts,jsx,tsx}"],
     theme: {
-      extend: {},
+      extend: {
+        fontFamily: {
+          sans: ['Helvetica Neue', 'Helvetica', 'Arial', 'sans-serif'],
+          helvetica: ['Helvetica Neue', 'Helvetica', 'Arial', 'sans-serif'],
+        },
+      },
       fontWeight: {
         hairline: 100,
         thin: 200,

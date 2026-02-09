@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import MenuIcon from "../assets/menu-icon.png";
 import XIcon from "../assets/x-icon.png";
+import { H2 } from "./atoms/Typography";
 
 function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
@@ -64,7 +65,7 @@ function Navbar() {
       <AnimatePresence>
         {isLoggingOut && (
           <motion.div 
-            className="fixed inset-0 bg-[#1E1E1E] flex items-center justify-center z-50"
+            className="fixed inset-0 bg-[#000000] flex items-center justify-center z-50"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -83,7 +84,7 @@ function Navbar() {
       </AnimatePresence>
 
       {/* Main Navigation Bar - Static position */}
-      <nav className={`bg-[#1E1E1E] text-white p-5 flex justify-between items-center relative z-[10000] 
+      <nav className={`bg-[#000000] text-white p-5 flex justify-between items-center relative z-[10000] 
         ${isOpen ? 'border-b border-white' : ''}`}>
         <div className="flex items-center h-9">
           <img 
@@ -109,7 +110,7 @@ function Navbar() {
 
       {/* Menu Overlay */}
       <motion.div
-        className={`fixed top-0 left-0 w-full h-screen bg-[#1E1E1E] flex items-center justify-center z-[9999]
+        className={`fixed top-0 left-0 w-full h-screen bg-[#000000] flex items-center justify-center z-[9999]
         ${isOpen ? "translate-x-0" : "-translate-x-full"}`}
         initial={false}
         animate={{ 
@@ -120,16 +121,44 @@ function Navbar() {
           }
         }}
       >
-        {/* Centered Logout Button */}
+        {/* Menu Items */}
+        <div className="flex flex-col items-center space-y-8">
+          <motion.button
+            onClick={() => {
+              setIsOpen(false);
+              navigate('/ConsultantInfo');
+            }}
+            className="text-white cursor-pointer hover:underline"
+            variants={menuItemVariants}
+            whileHover="hover"
+            whileTap="tap"
+          >
+            <H2 className="text-white">HOME</H2>
+          </motion.button>
+          
+          <motion.button
+            onClick={() => {
+              setIsOpen(false);
+              navigate('/StartTestPage');
+            }}
+            className="text-white cursor-pointer hover:underline"
+            variants={menuItemVariants}
+            whileHover="hover"
+            whileTap="tap"
+          >
+            <H2 className="text-white">RETAKE QUIZ</H2>
+          </motion.button>
+          
         <motion.button
           onClick={handleLogout}
-          className="text-[30px] text-white cursor-pointer hover:underline font-['ABC_Favorit_Expanded']"
+          className="text-white cursor-pointer hover:underline"
           variants={menuItemVariants}
           whileHover="hover"
           whileTap="tap"
         >
-          Logout
+          <H2 className="text-white">LOGOUT</H2>
         </motion.button>
+        </div>
       </motion.div>
     </>
   );
